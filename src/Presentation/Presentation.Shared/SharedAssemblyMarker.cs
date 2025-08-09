@@ -1,6 +1,3 @@
 ﻿namespace Presentation.Shared;
 
-public class SharedAssemblyMarker
-{
-
-}
+public sealed class SharedAssemblyMarker { }

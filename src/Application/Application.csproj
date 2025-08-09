@@ -16,6 +16,14 @@
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
       <PackageReference Include="MediatR" Version="13.0.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Common\" />
+      <Folder Include="DTOs\" />
+      <Folder Include="ExampleAgregate\" />
+      <Folder Include="Interfaces\" />
     </ItemGroup>
 
 </Project>

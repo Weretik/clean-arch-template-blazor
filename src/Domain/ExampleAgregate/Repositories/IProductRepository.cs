@@ -2,7 +2,7 @@ namespace Domain.ExampleAgregate.Repositories;
 
 public interface IProductRepository
 {
-    IQueryable<Product> GetAllProductAsync();
+    IQueryable<Product> Query();
     Task<Product?> GetByIdAsync(ProductId id, CancellationToken cancellationToken = default);
     Task<List<Product>> GetByCategoryIdAsync(CategoryId categoryId, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(ProductId id, CancellationToken cancellationToken = default);
