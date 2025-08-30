@@ -1,58 +1,62 @@
 ﻿namespace Application.Common.Behaviors;
 
-public class ValidationBehavior<TRequest, TResponse>(
-    IEnumerable<IValidator<TRequest>> validators,
-    ILoggingService loggingService)
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>, IUseCase
+public class ValidationBehavior<TMessage, TResponse>(
+    IEnumerable<IValidator<TMessage>> validators,
+    ILogger<ValidationBehavior<TMessage, TResponse>> logger)
+    : IPipelineBehavior<TMessage, TResponse>
+    where TMessage : IMessage
 {
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+    public async ValueTask<TResponse> Handle(
+        TMessage message,
+        MessageHandlerDelegate<TMessage,TResponse> next,
         CancellationToken cancellationToken)
     {
         if (!validators.Any())
-            return await next(cancellationToken);
+        {
+            ArgumentNullException.ThrowIfNull(next);
+            return await next(message, cancellationToken);
+        }
 
-        var requestName = typeof(TRequest).Name;
+        var context = new ValidationContext<TMessage>(message);
+        var results  = await Task.WhenAll(
+            validators.Select(v=> v.ValidateAsync(context, cancellationToken)));
 
-        loggingService.LogValidationStarted(requestName);
-
-        var context = new ValidationContext<TRequest>(request);
-        var validationResults = await Task.WhenAll(
-            validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-
-        var failures = validationResults
+        var failures = results
             .SelectMany(r => r.Errors)
-            .Where(f => f is not null)
+            .Where(e => e is not null)
             .ToList();
 
         if (failures.Count == 0)
-            return await next(cancellationToken);
-
-
-        var message = string.Join("; ", failures.Select(f => f.ErrorMessage));
-        var details = string.Join("; ", failures.Select(f => $"{f.PropertyName}: {f.ErrorMessage}"));
-
-        loggingService.LogValidationFailed(requestName, message, details);
-
-        if (typeof(TResponse).IsGenericType &&
-            typeof(TResponse).GetGenericTypeDefinition() == typeof(AppResult<>))
         {
-            var error = AppErrors.System.Validation(message).WithDetails(details);
+            ArgumentNullException.ThrowIfNull(next);
+            return await next(message, cancellationToken);
 
-            var result = AppResult.CreateFailureResult(typeof(TResponse).GetGenericArguments()[0], error);
-            return (TResponse)result;
         }
 
-        if (typeof(TResponse) == typeof(AppResult))
+        ValidationLog.Failed(logger, typeof(TMessage).Name,
+            failures.Select(f => new { f.PropertyName, f.ErrorMessage })
+        );
+
+        var errors = new ValidationResult(failures).AsErrors();
+
+        if (typeof(TResponse) == typeof(Result))
         {
-            var error = AppErrors.System.Validation(message).WithDetails(details);
-            return (TResponse)(object)AppResult.Failure(error);
+            var result = Result.Invalid(errors);
+            return (TResponse)(object)result;
+        }
+        if (typeof(TResponse).IsGenericType && typeof(TResponse).GetGenericTypeDefinition() == typeof(Result<>))
+        {
+            var method = typeof(Result<>)
+                .MakeGenericType(typeof(TResponse).GetGenericArguments()[0])
+                .GetMethod("Invalid", [typeof(List<ValidationError>)]);
+
+            ArgumentNullException.ThrowIfNull(method);
+
+
+            var result = method.Invoke(null, [errors]);
+            return (TResponse)result!;
         }
 
-        //throw new ValidationException(failures);
-        Throw.Application(AppErrors.System.UnsupportedResponseType.WithDetails(typeof(TResponse).Name));
-        return default!;
+        throw new ValidationException(failures);
     }
 }

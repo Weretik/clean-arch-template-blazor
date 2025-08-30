@@ -1,30 +1,50 @@
-﻿namespace Application.Common.Behaviors
+﻿using Application.Common.Notifications;
+
+namespace Application.Common.Behaviors
 {
-    public class DomainEventDispatcherBehavior<TRequest, TResponse>(
-        IDomainEventDispatcher domainEventDispatcher,
-        IDomainEventContext eventContext)
-        : IPipelineBehavior<TRequest, TResponse>
-        where TRequest : IRequest<TResponse>
+    public sealed class DomainEventDispatcherBehavior<TMessage, TResponse>(
+        IDomainEventContext eventContext,
+        IDomainEventDispatcher dispatcher,
+        ILogger<DomainEventDispatcherBehavior<TMessage, TResponse>> logger)
+        : IPipelineBehavior<TMessage, TResponse>
+        where TMessage : IMessage
     {
-        public async Task<TResponse> Handle(
-            TRequest request,
-            RequestHandlerDelegate<TResponse> next,
+        public async ValueTask<TResponse> Handle(
+            TMessage message,
+            MessageHandlerDelegate<TMessage, TResponse> next,
             CancellationToken cancellationToken)
         {
-            // Обработка запроса
-            var response = await next(cancellationToken);
+            ArgumentNullException.ThrowIfNull(next);
+            var response = await next(message, cancellationToken);
 
-            // Получаем все сущности, которые могут иметь доменные события
-            var domainEvents  = eventContext.GetDomainEntities()
-                .SelectMany(e => e.DomainEvents)
-                .ToList();
+            var entities = eventContext.GetDomainEntities();
+            var events = entities.SelectMany(e => e.DomainEvents).ToList();
 
-            // Отправляем события на обработку
-            foreach (var domainEvent in domainEvents)
-                await domainEventDispatcher.DispatchAsync(domainEvent, cancellationToken);
+            if (events.Count == 0)
+                return response;
 
-            // Очищаем события у сущностей
             eventContext.ClearDomainEvents();
+            DomainEventLog.Found(logger, typeof(TMessage).Name, events.Count);
+
+            foreach (var @event in events)
+            {
+                var eventName = @event.GetType().Name;
+                try
+                {
+                    DomainEventLog.Dispatching(logger, eventName);
+                    await dispatcher.DispatchAsync(@event, cancellationToken);
+                    DomainEventLog.Dispatched(logger, eventName);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    DomainEventLog.Failed(logger, eventName, ex);
+                    throw;
+                }
+            }
 
             return response;
         }

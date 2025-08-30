@@ -19,12 +19,4 @@
       <ProjectReference Include="..\Presentation.Shared\Presentation.Shared.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Components\ExampleAgregate\Partials\" />
-      <Folder Include="Components\ExampleAgregate\Section\" />
-      <Folder Include="Components\ExampleAgregate\Widgets\" />
-      <Folder Include="Components\Shared\Widgets\" />
-      <Folder Include="Pages\" />
-    </ItemGroup>
-
 </Project>

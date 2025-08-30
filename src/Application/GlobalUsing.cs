@@ -1,56 +1,37 @@
 ﻿// System namespaces
 global using System;
 global using System.Collections.Generic;
-global using System.Reflection;
 global using System.Security.Claims;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using System.Diagnostics;
 global using System.Linq.Expressions;
+global using System.Globalization;
 
 // Microsoft namespaces
-global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.DependencyInjection;
-global using Microsoft.Extensions.Logging.Abstractions;
+global using Microsoft.Extensions.Logging;
 global using Microsoft.EntityFrameworkCore;
-global using Microsoft.EntityFrameworkCore.ChangeTracking;
-global using Microsoft.EntityFrameworkCore.Infrastructure;
-
 
 // Application namespaces
+global using Application.Extensions;
 global using Application.Common.Behaviors;
-global using Application.Common.Results;
-global using Application.Common.Pagination;
-global using Application.Common.Events;
-global using Application.Common.Exceptions;
-global using Application.Common.Errors;
-global using Application.Interfaces;
-global using Application.DTOs;
-//Abstractions
-global using Application.Common.Abstractions.Events;
-global using Application.Common.Abstractions.UseCase;
-global using Application.Common.Abstractions.Pagination;
-global using Application.Common.Abstractions.Mapping;
-global using Application.Common.Abstractions.Result;
-global using Application.Common.Abstractions.Background;
-global using Application.Common.Abstractions.Logging;
-global using Application.Common.Mapping;
-
+global using Application.Common.Sorting;
+global using Application.Common.Paging;
+global using Application.Common.Logging;
+global using Application.ExampleAggregate.DTOs;
+global using Application.ExampleAggregate.Sorting;
+global using Application.ExampleAggregate.Interfaces;
+global using Application.ExampleAggregate.Specifications;
 // Domain namespaces
-global using Domain.Common.Exception;
 global using Domain.Common.Abstractions;
+global using Domain.ExampleAggregate.Entities;
+global using Domain.ExampleAggregate.ValueObjects;
 
 // External libraries
-global using AutoMapper;
-global using AutoMapper.QueryableExtensions;
-global using MediatR;
+global using Mediator;
 global using FluentValidation;
-
-// Example Agregate Domain
-global using Domain.ExampleAgregate.Entities;
-global using Domain.ExampleAgregate.ValueObjects;
-global using Domain.ExampleAgregate.Repositories;
-global using Domain.ExampleAgregate.Specifications;
-
-// Example Agregate Application
-global using Application.ExampleAgregate.DTOs;
+global using FluentValidation.Results;
+global using Ardalis.Specification;
+global using Ardalis.Result;
+global using Ardalis.Result.FluentValidation;

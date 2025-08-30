@@ -1,5 +1,4 @@
-﻿# === Runtime образ (production) ===
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
@@ -7,11 +6,9 @@ USER root
 RUN useradd -m exampleuser
 USER exampleuser
 
-# === Build образ (SDK + Node.js + EF CLI) ===
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Кэш и restore .NET
 COPY KedrStore.sln ./
 
 COPY src/Domain/*.csproj src/Domain/
@@ -26,24 +23,19 @@ COPY tests/ArchitectureTests/*.csproj tests/ArchitectureTests/
 
 RUN dotnet restore "ExampleProject.sln"
 
-# Кэш npm
 COPY src/Presentation/Presentation/package*.json src/Presentation/Presentation/
 WORKDIR /src/src/Presentation/Presentation
 RUN npm install
 
-# Копируем весь код
 WORKDIR /src
 COPY . .
 
-# Сборка front-end
 WORKDIR /src/src/Presentation/Presentation
 RUN npm run build
 
-# Публикация .NET
 WORKDIR /src
 RUN dotnet publish src/Presentation/Presentation/Presentation.csproj -c Release -o /app
 
-# === Финальный образ ===
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app ./

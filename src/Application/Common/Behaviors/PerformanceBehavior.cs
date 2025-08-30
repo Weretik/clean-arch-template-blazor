@@ -1,32 +1,35 @@
 ﻿namespace Application.Common.Behaviors;
 
-public class PerformanceBehavior<TRequest, TResponse>(
-    ILoggingService loggingService)
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public class PerformanceBehavior<TMessage, TResponse>(
+    ILogger<PerformanceBehavior<TMessage, TResponse>> logger)
+    : IPipelineBehavior<TMessage, TResponse>
+    where TMessage : IMessage
 {
-    // Порог в миллисекундах. Всё, что дольше — логгируем как медленное выполнение.
-    private const int ThresholdMilliseconds = 500;
+    private const int ThresholdMs = 500;
 
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+    public async ValueTask<TResponse> Handle(
+        TMessage message,
+        MessageHandlerDelegate<TMessage, TResponse> next,
         CancellationToken cancellationToken)
     {
-        var requestName = typeof(TRequest).Name;
-        var timer = Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
 
-        var response = await next();
-
-        timer.Stop();
-
-        var elapsedMs = timer.ElapsedMilliseconds;
-
-        if (elapsedMs > ThresholdMilliseconds)
+        try
         {
-            loggingService.LogPerformance(requestName, elapsedMs, request);
+            ArgumentNullException.ThrowIfNull(next);
+            return await next(message, cancellationToken);
         }
-
-        return response;
+        finally
+        {
+            sw.Stop();
+            if (sw.ElapsedMilliseconds >= ThresholdMs)
+            {
+                PerformanceLog.Slow(
+                    logger,
+                    typeof(TMessage).Name,
+                    sw.ElapsedMilliseconds,
+                    ThresholdMs);
+            }
+        }
     }
 }

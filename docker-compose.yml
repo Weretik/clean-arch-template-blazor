@@ -64,5 +64,5 @@
       retries: 5
 
 volumes:
-  kedrstore_dbdata:
+  examplestore_dbdata:
   seq_data:
