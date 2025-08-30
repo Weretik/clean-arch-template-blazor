@@ -1,5 +1,8 @@
 ﻿namespace Domain.Identity.Constants
 {
+    /// <summary>
+    /// Константы для политик авторизации
+    /// </summary>
     public static class AppPolicies
     {
         public const string RequireAdminRole = "RequireAdminRole";

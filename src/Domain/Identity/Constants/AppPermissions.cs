@@ -1,5 +1,8 @@
 ﻿namespace Domain.Identity.Constants
 {
+    /// <summary>
+    /// Константы для детальных разрешений в приложении
+    /// </summary>
     public static class AppPermissions
     {
         // Разрешения для управления пользователями
